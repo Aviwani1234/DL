@@ -1,0 +1,65 @@
+import tensorflow as tf
+from tensorflow import keras
+import pandas as pd
+import numpy as np
+import random
+import matplotlib.pyplot as plt
+%matplotlib inline
+
+mnist = tf.keras.datasets.mnist
+(X_train, y_train), (X_test, y_test) = mnist.load_data()
+
+X_train[0].min(), X_train[0].max()
+
+X_train = X_train/255
+X_test = X_test/255
+X_train[0].min(), X_train[0].max()
+
+def plot_digit(image, digit, plt, i):
+    plt.subplot(4,5,i+1)
+    plt.imshow(image)
+    plt.title(f"Digit:{digit}")
+    plt.xticks([])
+    plt.yticks([])
+plt.figure(figsize=(16,10))
+for i in range(20):
+    plot_digit(X_train[i], y_train[i], plt, i)
+plt.show()
+
+X_train = X_train.reshape((X_train.shape + (1,)))
+X_test = X_test.reshape((X_test.shape + (1,)))
+
+y_train[0:20]
+
+model = keras.Sequential([
+    keras.layers.Flatten(input_shape=(28,28)),
+    keras.layers.Dense(128, activation='relu'),
+    keras.layers.Dense(10, activation='softmax')
+])
+model.summary()
+
+from tensorflow.keras.optimizers import SGD
+model.compile(
+    optimizer = SGD(learning_rate = 0.01, momentum=0.9),
+    loss = "sparse_categorical_crossentropy",
+    metrics = ["accuracy"])
+
+model.fit(X_train, y_train, epochs=10, batch_size=32)
+
+plt.figure(figsize=(16,10))
+for i in range(20):
+    image = random.choice(X_test).squeeze()
+    digit = np.argmax(model.predict(image.reshape(1,28,28,1))[0], axis=-1)
+    plot_digit(image, digit, plt, i)
+plt.show()
+
+n = random.randint(0,9999)
+plt.imshow(X_test[n])
+plt.show()
+
+predicted_value = model.predict(X_test)
+print("Handwritten number is %d" %np.argmax(predicted_value[n]))
+
+score = model.evaluate(X_test, y_test, verbose=0)
+print('Test loss:', score[0])
+print('Test accuracy:', score[1])
